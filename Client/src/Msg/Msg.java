@@ -2,7 +2,7 @@ package Msg;
 
 public class Msg implements java.io.Serializable {
 
-    private static final long serialVersionUID = 2709425275741743919L;
+//    private static final long serialVersionUID = 2709425275741743919L;
 
     private String MessageType;
 

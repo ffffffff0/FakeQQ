@@ -1,35 +1,53 @@
 package net;
 
 import Msg.Msg;
-import Operator.Operator;
+import Database.Operator;
 
 import java.io.*;
 import java.net.Socket;
 
 public class ServerThread extends Thread {
     private Socket connection;
-    private ObjectInputStream read;
 
     ServerThread(Socket connection) {
         this.connection = connection;
     }
 
+    // 返回列表
+    private void returnFriend(String[] keys, Msg msg, StringBuilder result, String flag) throws IOException {
+        for (String key : keys) {
+            if (!key.equals(msg.getSender())) {
+                result.append(key).append("-");
+                // 更新在有新的登录时，将新登录的用户返回给其他在线用户
+                Socket socket = ServerManger.getSocket(key);
+                ObjectOutputStream write = new ObjectOutputStream(socket.getOutputStream());
+                Msg m = new Msg();
+                m.setMessageType(flag);
+                m.setContent(msg.getSender());
+                write.writeObject(m);
+            }
+        }
+        // 将在线用户返回给新登录的用户
+        ObjectOutputStream write = new ObjectOutputStream(connection.getOutputStream());
+        msg.setContent(result.toString());
+        msg.setGetter(msg.getSender());
+        System.out.println(msg.getMessageType() + msg.getContent());
+        write.writeObject(msg);
+    }
+
+    // run
     @Override
     public void run() {
         try {
-            int count = 0;
             Operator op = new Operator();
-
+            ObjectInputStream read = new ObjectInputStream(connection.getInputStream());
             while (true) {
-                if (count++ == 0) {
-                    read = new ObjectInputStream(connection.getInputStream());
-                }
                 Msg msg = (Msg) read.readObject();
-                Socket getter = ServerManger.getSocket(msg.getGetter());
                 System.out.println(msg.getMessageType());
                 switch (msg.getMessageType()) {
                     case "chat":
                         // 聊天
+                        Socket getter = ServerManger.getSocket(msg.getGetter());
                         ObjectOutputStream write = new ObjectOutputStream(getter.getOutputStream());
                         write.writeObject(msg);
                         break;
@@ -61,59 +79,26 @@ public class ServerThread extends Thread {
                         String[] keys = ServerManger.getAllSocket();
                         StringBuilder result = new StringBuilder("");
                         // 返回列表
-                        for (String key : keys) {
-                            if (!key.equals(msg.getSender())) {
-                                result.append(key).append(" ");
-                                // 更新在有新的登录时
-                                Socket s = ServerManger.getSocket(key);
-                                write = new ObjectOutputStream(s.getOutputStream());
-                                Msg m = new Msg();
-                                m.setMessageType("returnFriend");
-                                m.setSender(msg.getSender());
-                                m.setContent(msg.getSender());
-                                m.setGetter(key);
-                                write.writeObject(m);
-                            }
-                        }
-                        write = new ObjectOutputStream(connection.getOutputStream());
-                        msg.setContent(result.toString());
-                        msg.setGetter(msg.getSender());
-                        System.out.println(msg.getMessageType() + msg.getContent());
-                        write.writeObject(msg);
+                        returnFriend(keys, msg, result, "returnFriend");
                         break;
                     case "exit":
                         // 退出刷新界面在线列表
                         String delName = msg.getSender();
+                        // 从map中删除
                         ServerManger.removeSocket(delName);
+                        // 发送消息
                         msg.setMessageType("delFriend");
                         String[] list = ServerManger.getAllSocket();
                         StringBuilder re = new StringBuilder("");
                         // 返回列表
-                        for (String key : list) {
-                            if (!key.equals(msg.getSender())) {
-                                re.append(key).append(" ");
-                                // 更新在有新的登录时
-                                Socket s = ServerManger.getSocket(key);
-                                write = new ObjectOutputStream(s.getOutputStream());
-                                Msg m = new Msg();
-                                m.setMessageType("delFriend");
-                                m.setSender(msg.getSender());
-                                m.setContent(msg.getSender());
-                                m.setGetter(key);
-                                write.writeObject(m);
-                            }
-                        }
-                        write = new ObjectOutputStream(connection.getOutputStream());
-                        msg.setContent(re.toString());
-                        msg.setGetter(msg.getSender());
-                        System.out.println(msg.getMessageType() + msg.getContent());
-                        write.writeObject(msg);
-                        break;
+                        returnFriend(list, msg, re, "delFriend");
+//                        this.interrupt();
+                        return;
                     case "signUp":
                         // 注册
-                        String sname = msg.getContent().split(",")[0];
-                        String spassword = msg.getContent().split(",")[1];
-                        boolean flag = op.signUp(sname, spassword);
+                        String signName = msg.getContent().split(",")[0];
+                        String signPassword = msg.getContent().split(",")[1];
+                        boolean flag = op.signUp(signName, signPassword);
                         write = new ObjectOutputStream(connection.getOutputStream());
                         if (flag) {
                             msg.setContent("success");

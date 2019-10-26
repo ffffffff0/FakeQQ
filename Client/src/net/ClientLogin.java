@@ -13,11 +13,13 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 public class ClientLogin extends JFrame {
+    private static final long serialVersionUID = 1L;
     private JPanel cPanel;
     private JTextField nameField;
     private JPasswordField passField;
 
     public ClientLogin() {
+        //
         setTitle("登录界面");
         setBounds(490, 290, 300, 300);
         cPanel = new JPanel();
@@ -28,9 +30,9 @@ public class ClientLogin extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // 用户名
-        JLabel namej = new JLabel("用户名");
-        namej.setBounds(50, 50, 90, 30);
-        cPanel.add(namej);
+        JLabel nameJLabel = new JLabel("用户名");
+        nameJLabel.setBounds(50, 50, 90, 30);
+        cPanel.add(nameJLabel);
 
         nameField = new JTextField();
         nameField.setBounds(100, 50, 90, 30);
@@ -38,9 +40,9 @@ public class ClientLogin extends JFrame {
         nameField.setColumns(10);
 
         // 密码
-        JLabel passj = new JLabel("密码");
-        passj.setBounds(50, 100, 90, 30);
-        cPanel.add(passj);
+        JLabel passJLabel = new JLabel("密码");
+        passJLabel.setBounds(50, 100, 90, 30);
+        cPanel.add(passJLabel);
 
         passField = new JPasswordField();
         passField.setBounds(100, 100, 90, 30);
@@ -53,7 +55,7 @@ public class ClientLogin extends JFrame {
         logButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Socket socket = null;
+                Socket socket;
                 try {
                     String username = nameField.getText();
                     String password = new String(passField.getPassword());
@@ -68,12 +70,13 @@ public class ClientLogin extends JFrame {
                     // 返回好友列表 returnFriend
                     // 退出 exit
                     // 聊天 chat
-                    //
+                    // 删除离线好友 delFriend
                     msg.setMessageType("logIn");
                     msg.setSender(username);
                     msg.setContent(username + "," + password);
                     System.out.println(msg.getMessageType() + msg.getContent());
                     write.writeObject(msg);
+
                     // 登录验证
                     if (username.isEmpty() || password.isEmpty()) {
                         JOptionPane.showMessageDialog(cPanel, "请填写用户名或密码");
@@ -81,7 +84,7 @@ public class ClientLogin extends JFrame {
                         ObjectInputStream read = new ObjectInputStream(socket.getInputStream());
                         msg = (Msg) read.readObject();
                         if (msg.getContent().equals("success")) {
-                            // 登录成功
+                            // 登录成功 刷新好友列表
                             msg.setMessageType("getFriend");
                             msg.setSender(msg.getGetter());
                             System.out.println(msg.getMessageType() + msg.getContent());
@@ -98,6 +101,7 @@ public class ClientLogin extends JFrame {
                 }
             }
         });
+
         cPanel.add(logButton);
 
         // 注册
@@ -135,6 +139,7 @@ public class ClientLogin extends JFrame {
                 }
             }
         });
+
         cPanel.add(signButton);
     }
 
@@ -143,8 +148,8 @@ public class ClientLogin extends JFrame {
             @Override
             public void run() {
                 try {
-                    ClientLogin li = new ClientLogin();
-                    li.setVisible(true);
+                    ClientLogin clientLogin = new ClientLogin();
+                    clientLogin.setVisible(true);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

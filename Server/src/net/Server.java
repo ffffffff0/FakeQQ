@@ -20,8 +20,8 @@ public class Server {
             try {
                 Socket tcpConn = ss.accept();
                 System.out.println("有客户端连接了");
-                ServerThread r = new ServerThread(tcpConn);
-                r.start();
+                ServerThread serverThread = new ServerThread(tcpConn);
+                serverThread.start();
             } catch (IOException e) {
                 e.printStackTrace();
             }

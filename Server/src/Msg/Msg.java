@@ -1,19 +1,22 @@
 package Msg;
 
-import java.util.Date;
-
 public class Msg implements java.io.Serializable {
 
-    private static final long serialVersionUID = 2709425275741743919L;
+//    private static final long serialVersionUID = 2709425275741743919L;
 
+    // 消息的类型
     private String MessageType;
 
+    // 消息内容
     private String content;
 
+    // 发送消息的
     private String sender;
 
+    // 接收消息的
     private String getter;
 
+    // 日期
     private String date;
 
     public String getDate() {

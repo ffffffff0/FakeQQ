@@ -15,15 +15,16 @@ import java.util.Date;
 
 public class ClientFrame extends JFrame implements Runnable {
 
-    private JComboBox<String> JFriends;
+	private JComboBox<String> JFriends;
     private Socket socket;
-    private JTextArea jta;
-    private JTextField jtf;
+    private JTextArea jTextArea;
+    private JTextField jTextField;
 
     // 客户端
     ClientFrame(String name, Socket socket, ObjectOutputStream write) {
         this.socket = socket;
         setTitle(name + "的聊天窗口");
+
         // 界面大小
         setBounds(490, 200, 400, 450);
 
@@ -42,25 +43,25 @@ public class ClientFrame extends JFrame implements Runnable {
         footButton.add(JFriends);
 
         // 文本框
-        jtf = new JTextField();
-        jtf.setBounds(0, 260, 400, 100);
-        textPane.add(jtf);
+        jTextField = new JTextField();
+        jTextField.setBounds(0, 260, 400, 100);
+        textPane.add(jTextField);
 
         // 文本域
-        jta = new JTextArea(8, 12);
+        jTextArea = new JTextArea(8, 12);
 
         // 自动换行
-        jta.setLineWrap(true);
+        jTextArea.setLineWrap(true);
 
         // 加入滚动条
-        JScrollPane sp = new JScrollPane(jta);
-        sp.setBounds(0, 0, 400, 250);
+        JScrollPane jScrollPane = new JScrollPane(jTextArea);
+        jScrollPane.setBounds(0, 0, 400, 250);
 
         // 超过文本域才会显示
-        sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        jScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
         // 加入面板
-        textPane.add(sp);
+        textPane.add(jScrollPane);
 
         // 日期格式
         SimpleDateFormat dataForm = new SimpleDateFormat("YYYY/MM/dd/ hh:mm:ss");
@@ -76,13 +77,12 @@ public class ClientFrame extends JFrame implements Runnable {
                 String idFriend = JFriends.getSelectedItem().toString();
                 msg.setGetter(idFriend);
                 msg.setSender(name);
-                msg.setContent(jtf.getText());
+                msg.setContent(jTextField.getText());
                 msg.setDate(dataForm.format(new Date()));
-
                 // 打印
                 String msgStr = msg.getSender() + "给" + msg.getGetter() + "发消息了";
                 System.out.println(msgStr);
-                jtf.setText("");
+                jTextField.setText("");
                 // 发消息
                 sendMsg(msg);
                 try {
@@ -90,6 +90,7 @@ public class ClientFrame extends JFrame implements Runnable {
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
+
             }
         });
         footButton.add(jbn);
@@ -108,11 +109,7 @@ public class ClientFrame extends JFrame implements Runnable {
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
-                try {
-                    write.writeObject(msg);
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
+
                 ClientFrame.this.dispose();
             }
         });
@@ -122,8 +119,8 @@ public class ClientFrame extends JFrame implements Runnable {
         this.add(footButton, BorderLayout.SOUTH);
         this.add(textPane);
         this.setVisible(true);
-        Thread t = new Thread(this);
-        t.start();
+        Thread thread = new Thread(this);
+        thread.start();
     }
 
     @Override
@@ -140,30 +137,38 @@ public class ClientFrame extends JFrame implements Runnable {
                         break;
                     case "returnFriend":
                         // 更新在线列表
-                        String[] friends = msg.getContent().split(" ");
+                        String[] friends = msg.getContent().split("-");
                         updateFriend(friends);
                         break;
                     case "delFriend":
                         // 删除离线好友
                         JFriends.removeItem(msg.getContent());
                         break;
+
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
+        }finally {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     // 更新在线列表
     private void updateFriend(String[] Friends) {
         for (String friend : Friends) {
-            JFriends.addItem(friend);
+            if(!friend.isEmpty())
+                JFriends.addItem(friend);
         }
     }
 
     // 发送消息
     private void sendMsg(Msg msg) {
-        jta.append(msg.getSender() + "---->" + msg.getGetter() + msg.getDate() + "\r\n");
-        jta.append("   " + msg.getContent() + "\r\n");
+        jTextArea.append(msg.getSender() + "<->" + msg.getGetter() + msg.getDate() + "\n");
+        jTextArea.append("=>" + msg.getContent() + "\n");
     }
 }
